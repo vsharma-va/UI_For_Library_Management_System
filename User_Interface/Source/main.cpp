@@ -44,7 +44,7 @@ int main(int, char**)
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
     ::RegisterClassEx(&wc);
-    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Dear ImGui DirectX9 Example"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Library Management System"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -118,7 +118,7 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
         
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        // MAIN PROGRAM
         {
             ImVec2 buttonSize = ImVec2(ImGui::GetFontSize() * 20, 20);
 
@@ -135,6 +135,8 @@ int main(int, char**)
             static bool closeLogReg = false;
             static bool loginSuccessfull = false;
             static bool openSearchBox = false;
+            static bool inputErrorLogin = true;
+            static bool displaySuccess = true;
             static char firstName[100] = "";
             static char lastName[100] = "";
             static char userIdChar[12] = "";
@@ -188,6 +190,7 @@ int main(int, char**)
                 if (ImGui::IsItemClicked(0))
                 {
                     loginOpen = !loginOpen;
+                    inputErrorLogin = true;
                 }
                 if (loginOpen)
                 {
@@ -198,7 +201,25 @@ int main(int, char**)
                     userIdString = std::string(userIdChar);
                     if (!userIdString.empty())
                     {
-                        userIdInt = std::stoull(userIdString);        // the program is updated every frame even when the input fields are empty
+                        try
+                        {
+                            userIdInt = std::stoull(userIdString);
+                        }
+                        catch (const std::invalid_argument& oor)
+                        {
+                            if (inputErrorLogin)
+                            {
+                                ImGui::Begin("Error");
+                                ImGui::Text("Please enter integers only");
+                                ImGui::Button("Close", buttonSize);
+                                if (ImGui::IsItemClicked(0))
+                                {
+                                    inputErrorLogin = false;
+                                }
+                                ImGui::End();
+                            }
+                        }
+                        // the program is updated every frame even when the input fields are empty
                     }                                                 // if Library ID field is empty and we try to convert it to unsigned long long we will get an error     
                                                                       // therefore it we first check to see if the field is empty or not
                     ImGui::Button("Submit", buttonSize);
@@ -236,8 +257,22 @@ int main(int, char**)
                 {
                     logRegOpen = false;
                     openSearchBox = true;
+                    displaySuccess = true;
                 }
                 
+                ImGui::End();
+            }
+            
+            if (loginSuccessfull && displaySuccess)
+            {
+                ImGui::SetNextWindowFocus();
+                ImGui::Begin("Success");
+                ImGui::Text("Login Successfull !!!");
+                ImGui::Button("close", buttonSize);
+                if (ImGui::IsItemClicked(0))
+                {
+                    displaySuccess = false;
+                }
                 ImGui::End();
             }
 
@@ -252,6 +287,7 @@ int main(int, char**)
                 static bool firstRun = false;
                 static bool loadData = true;
                 static bool confirmationWin = false;
+                static bool displayNoResult = true;
                 static std::string requiredBook = "";
                 ImGui::Begin("Library");
                 static char bookName[1000] = "";
@@ -287,6 +323,7 @@ int main(int, char**)
                     std::cout << std::get<0>(catalog).size();
                     searchResult = user.searchBook(&catalog);
                     displayResult = true;
+                    displayNoResult = true;
                     std::cout << "ok";
                 }
                 if (displayResult)
@@ -297,39 +334,60 @@ int main(int, char**)
                     ImGui::Separator();
                     ImGui::Spacing();
                     ImGui::Spacing();
-                    if (ImGui::BeginListBox("Search Results"))
+                    if (searchResult.size() == 0)
                     {
-                        for (int n = 0; n < searchResult.size(); n++)
+                        if (displayNoResult)
                         {
-                            const bool is_selected = (item_current_idx == n);
-                            if (ImGui::Selectable(searchResult.at(n).c_str(), is_selected))
-                                item_current_idx = n;
-
-                            if (is_selected)
-                                ImGui::SetItemDefaultFocus();
+                            ImGui::SetNextWindowFocus();
+                            ImGui::Begin("Info");
+                            ImGui::Text("No Books matching your search");
+                            ImGui::Button("Close", buttonSize);
+                            if (ImGui::IsItemClicked(0))
+                            {
+                                displayNoResult = false;
+                            }
+                            ImGui::End();
                         }
-                        ImGui::EndListBox();
                     }
-                    ImGui::Button("Confirm", buttonSize);
-                    if (ImGui::IsItemClicked(0))
+                    
+                    else if (searchResult.size() != 0)
                     {
-                        requiredBook = searchResult.at(item_current_idx);
-                        IssueBook final = IssueBook();
-                        final.finalizeProcess(&requiredUser, requiredBook);
-                        confirmationWin = true;
-                    }
-                    if (confirmationWin)
-                    {
-                        ImGui::Begin("Confirmation");
-                        ImGui::Text("Book Issued Successfully");
-                        ImGui::Button("Close", buttonSize);
+                        if (ImGui::BeginListBox("Search Results"))
+                        {
+                            for (int n = 0; n < searchResult.size(); n++)
+                            {
+                                const bool is_selected = (item_current_idx == n);
+                                if (ImGui::Selectable(searchResult.at(n).c_str(), is_selected))
+                                    item_current_idx = n;
+
+                                if (is_selected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndListBox();
+                        }
+                        ImGui::Button("Confirm", buttonSize);
                         if (ImGui::IsItemClicked(0))
                         {
-                            confirmationWin = false;
+                            requiredBook = searchResult.at(item_current_idx);
+                            IssueBook final = IssueBook();
+                            final.finalizeProcess(&requiredUser, requiredBook);
+                            confirmationWin = true;
                         }
-                        ImGui::End();
+                        if (confirmationWin)
+                        {
+                            ImGui::Begin("Confirmation");
+                            ImGui::Text("Book Issued Successfully");
+                            ImGui::Button("Close", buttonSize);
+                            if (ImGui::IsItemClicked(0))
+                            {
+                                confirmationWin = false;
+                            }
+                            ImGui::End();
+                        }
                     }
                 }
+                    
+                   
                 //if (ImGui::Button("Search", buttonSize))
                 //{
                 //    CreateAndSearchCatalog user = CreateAndSearchCatalog(bookName);
