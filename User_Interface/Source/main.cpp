@@ -126,12 +126,12 @@ int main(int, char**)
             jf.ConfigInputTextCursorBlink = true;
 
             static std::tuple<std::string, unsigned long long> requiredUser;
-            static bool logRegOpen = true;
-            static bool regOpen = false;
-            static bool loginOpen = false;
-            static bool displayId = false;
-            static bool infoWin = true;
-            static bool errorWin = false;
+            static bool logRegOpen = true;   // to open the first window where you can select either login or register
+            static bool regOpen = false;     // to open registeration window
+            static bool loginOpen = false;   // to open login window
+            static bool displayId = false;   // to display user id after registeration
+            static bool infoWin = true;      // to open window to display user id
+            static bool errorWin = false;    // to display error if the user either entered wrong credentials or is not registered
             static bool closeLogReg = false;
             static bool loginSuccessfull = false;
             static bool openSearchBox = false;
@@ -148,6 +148,7 @@ int main(int, char**)
             {
                 ImGui::Begin("Login/Register");
                 ImGui::Button("Register", buttonSize);
+                /* REGISTERATION WINDOW PROCESSES */
                 if (ImGui::IsItemClicked(0))
                 {
                     regOpen = !regOpen;
@@ -161,16 +162,16 @@ int main(int, char**)
                     if (ImGui::IsItemClicked(0))
                     {
                         User hello = User(false, firstName, lastName);
-                        id = hello.addUserToDatabase();
-                        regOpen = false;
-                        displayId = true;
-                        infoWin = true;
+                        id = hello.addUserToDatabase();                 // sends first name last name and a bool which represents if the user is registered or not
+                        regOpen = false;                                // registeration window is closed
+                        displayId = true;                               // userId should be displayed
+                        infoWin = true;                                 // infoWin should be displayed
                     }
 
                     ImGui::End();
                 }
-                if (infoWin && displayId)
-                {
+                if (infoWin && displayId)                               // if both of them are true a window with users id and a close button is displayed
+                {                                                       // then user has the choice to login
                     ImGui::Begin("UserId");
                     ImGui::Text("This is your user id %llu", id);
                     ImGui::Button("Close", buttonSize);
@@ -182,6 +183,7 @@ int main(int, char**)
                     ImGui::End();
                 }
 
+                /* LOGIN PROCESSES */
                 ImGui::Button("Login", buttonSize);
                 if (ImGui::IsItemClicked(0))
                 {
@@ -196,23 +198,23 @@ int main(int, char**)
                     userIdString = std::string(userIdChar);
                     if (!userIdString.empty())
                     {
-                        userIdInt = std::stoull(userIdString);
-                    }
-                    
+                        userIdInt = std::stoull(userIdString);        // the program is updated every frame even when the input fields are empty
+                    }                                                 // if Library ID field is empty and we try to convert it to unsigned long long we will get an error     
+                                                                      // therefore it we first check to see if the field is empty or not
                     ImGui::Button("Submit", buttonSize);
                     if (ImGui::IsItemClicked(0))
                     {
-                        User welcome = User(true, firstName, lastName, userIdInt);
-                        requiredUser = welcome.findUserInDatabase();
-                        loginOpen = false;
-                        loginSuccessfull = true;
-                        errorWin = false;
-
+                        User welcome = User(true, firstName, lastName, userIdInt);          // when the submit button is pressed the data is sent to the 
+                        requiredUser = welcome.findUserInDatabase();                        // function in User.cpp file
+                        loginOpen = false;                                                  // login window is closed
+                        loginSuccessfull = true;                                            // login / registeration window is closed
+                        errorWin = false;                                                   // errorWin is reset. So that the user can try logging in again 
+                                                                                            // and still recieve an error
                     }
                     ImGui::End();
                 }
-                if (std::get<0>(requiredUser) == std::string("false"))
-                {
+                if (std::get<0>(requiredUser) == std::string("false"))                       // if the user is not found the function in User.cpp returns a tuple with 
+                {                                                                            // values ("false", 0)
                     if (!errorWin)
                     {
                         loginSuccessfull = false;
@@ -226,7 +228,7 @@ int main(int, char**)
                         ImGui::End();
                     }
                 }
-                else if(std::get<0>(requiredUser) == firstName && std::get<1>(requiredUser) == userIdInt && loginSuccessfull)
+                else if(std::get<0>(requiredUser) == firstName && std::get<1>(requiredUser) == userIdInt && loginSuccessfull)   // if the user is found 
                 {
                     closeLogReg = true;
                 }
@@ -239,6 +241,7 @@ int main(int, char**)
                 ImGui::End();
             }
 
+            // Window to search books is displayed
             if (openSearchBox)
             {
                 static std::tuple<std::vector<std::string>, std::vector<int>> catalog{};
@@ -253,8 +256,8 @@ int main(int, char**)
                 ImGui::Begin("Library");
                 static char bookName[1000] = "";
                 ImGui::SameLine();
-                ImGui::Button("Create Catalog", buttonSize);
-                if (ImGui::IsItemClicked(0))
+                ImGui::Button("Create Catalog", buttonSize);                        // Creates the catalog file from catalog.csv file 
+                if (ImGui::IsItemClicked(0))                                        // important otherwise all searches will return nothing
                 {
                     catalog = CreateAndSearchCatalog::checkData(true);
                     loadData = false;
@@ -262,7 +265,7 @@ int main(int, char**)
                 ImGui::SameLine(); HelpMarker("Click this if this is your first time running the program or catalog file doesn't exsist");
                 ImGui::SameLine();
                 ImGui::Button("Clear Catalog", buttonSize);
-                if (ImGui::IsItemClicked(0))
+                if (ImGui::IsItemClicked(0))                                         // if you want to clear the catalog file (you must click on create catalog after this)
                 {
                     CreateAndSearchCatalog::clearCatalog();
                 }
@@ -288,7 +291,7 @@ int main(int, char**)
                 }
                 if (displayResult)
                 {
-                    static int item_current_idx = 0; // Here we store our selection data as an index.
+                    static int item_current_idx = 0;
                     ImGui::Spacing();
                     ImGui::Spacing();
                     ImGui::Separator();
@@ -302,7 +305,6 @@ int main(int, char**)
                             if (ImGui::Selectable(searchResult.at(n).c_str(), is_selected))
                                 item_current_idx = n;
 
-                            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
                             if (is_selected)
                                 ImGui::SetItemDefaultFocus();
                         }
