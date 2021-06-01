@@ -137,6 +137,7 @@ int main(int, char**)
             static bool openSearchBox = false;
             static bool inputErrorLogin = true;
             static bool displaySuccess = true;
+            
             static char firstName[100] = "";
             static char lastName[100] = "";
             static char userIdChar[12] = "";
@@ -281,6 +282,7 @@ int main(int, char**)
             {
                 static std::tuple<std::vector<std::string>, std::vector<int>> catalog{};
                 static std::vector<std::string> searchResult{};
+                static std::vector<std::string> sortedBooks{};
                 static bool displayResult = false;
                 static int partialCurrent = 0;
                 static int perfectCurrent = 0;
@@ -288,6 +290,7 @@ int main(int, char**)
                 static bool loadData = true;
                 static bool confirmationWin = false;
                 static bool displayNoResult = true;
+                static bool everything = false;
                 static std::string requiredBook = "";
                 ImGui::Begin("Library");
                 static char bookName[1000] = "";
@@ -306,13 +309,52 @@ int main(int, char**)
                     CreateAndSearchCatalog::clearCatalog();
                 }
                 ImGui::SameLine(); HelpMarker("This will clear everything in the catalog file. Please click create catalog after pressing this otherwise the program will not work");
+                ImGui::SameLine();
+                ImGui::Checkbox("Display All Books", &everything); 
+                static int getDataCounter = 0;
+                if (everything && getDataCounter == 0)
+                {
+                    sortedBooks = CreateAndSearchCatalog::returnAllBooks();
+                    getDataCounter++;
+                }
+                else if (!everything)
+                {
+                    getDataCounter = 0;
+                }
+                if (everything)
+                {
+                    
+                    ImGui::SetNextWindowFocus();
+                    ImGui::Begin("Every Book", &everything);
+                    ImGui::SetWindowSize(ImVec2(-FLT_MIN - 60, 30 * ImGui::GetTextLineHeightWithSpacing()));
+                    static int currentBook = 0;
+                    if (ImGui::BeginListBox("All Books", ImVec2(-FLT_MIN - 60, 25 * ImGui::GetTextLineHeightWithSpacing())))
+                    {
+                        for (int n = 0; n < sortedBooks.size(); n++)
+                        {
+                            const bool which = (currentBook == n);
+                            if (ImGui::Selectable(sortedBooks.at(n).c_str(), which))
+                                currentBook = n;
+
+                            if (which)
+                                ImGui::SetItemDefaultFocus();
+                            
+                        }
+                        ImGui::EndListBox();
+                        
+                    }
+                        
+                    ImGui::End();
+                }
+                    
+            
 
                 ImGui::Spacing();
                 ImGui::Separator();
                 ImGui::Spacing();
 
                 ImGui::InputTextWithHint("Book Name", "Enter the name of the book you would like to search", bookName, IM_ARRAYSIZE(bookName));
-                ImGui::Button("Submit", buttonSize);
+                ImGui::Button("Search", buttonSize);
                 if (ImGui::IsItemClicked(0))
                 {
                     if (loadData)

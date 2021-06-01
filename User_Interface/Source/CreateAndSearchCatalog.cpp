@@ -107,6 +107,28 @@ void CreateAndSearchCatalog::clearCatalog()
 	clear.close();
 }
 
+std::vector<std::string> CreateAndSearchCatalog::returnAllBooks()
+{
+	std::fstream everyBook;
+	std::vector<std::string> sortedVector;
+	everyBook.open("Text_Files/Catalog.txt", std::ios::in);
+	if (everyBook.is_open())
+	{
+		std::string lines;
+		std::string requiredString;
+		while (getline(everyBook, lines))
+		{
+			size_t lastSpace = lines.find_last_of(" ");
+			requiredString = lines.substr(0, lastSpace);
+			sortedVector.push_back(requiredString);
+		}
+		std::sort(sortedVector.begin(), sortedVector.end());
+		everyBook.close();
+	}
+	return sortedVector;
+	
+}
+
 
 
 std::vector<std::string> CreateAndSearchCatalog::searchBook(std::tuple<std::vector<std::string>, std::vector<int>>* catalog)
@@ -116,7 +138,7 @@ std::vector<std::string> CreateAndSearchCatalog::searchBook(std::tuple<std::vect
 	for (std::string book : std::get<0>(*catalog))
 	{
 		bool match = false;
-		int where = book.find(userSearch);
+		size_t where = book.find(userSearch);
 		if (userSearch == book)
 		{
 			match = true;

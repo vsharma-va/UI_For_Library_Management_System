@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <tuple>
+#include <algorithm>
 
 
 class CreateAndSearchCatalog
@@ -20,6 +21,7 @@ public:
 	// necessary files for the catalog. Then you can change to false for faster compilation.
 	static std::tuple<std::vector<std::string>, std::vector<int>> checkData(bool reload);  
 	static void clearCatalog();
+	static std::vector<std::string> returnAllBooks();
 	// takes the catalog from checkData by reference/pointer
 	std::vector<std::string> searchBook(std::tuple<std::vector<std::string>, std::vector<int>> *catalog);
 	// will do what is written inside the main function
