@@ -140,7 +140,7 @@ int main(int, char**)
             
             static char firstName[100] = "";
             static char lastName[100] = "";
-            static char userIdChar[12] = "";
+            static char userIdChar[12];
             static std::string userIdString= "";
             static unsigned long long userIdInt = 0;
             static unsigned long long id = 0;
@@ -176,8 +176,14 @@ int main(int, char**)
                 if (infoWin && displayId)                               // if both of them are true a window with users id and a close button is displayed
                 {                                                       // then user has the choice to login
                     ImGui::Begin("UserId");
+
                     ImGui::Text("This is your user id %llu", id);
+                    ImGui::Text("UserId copied to clipboard");
+                    static std::string again = std::to_string(id);
+                    static const char *ohGod[13]{again.c_str()};
+                    ImGui::SetClipboardText(*ohGod);
                     ImGui::Button("Close", buttonSize);
+                    
                     if (ImGui::IsItemClicked(0))
                     {
                         infoWin = false;
@@ -290,8 +296,12 @@ int main(int, char**)
                 static bool loadData = true;
                 static bool confirmationWin = false;
                 static bool displayNoResult = true;
+                static bool alreadyIssued = false;
+                static bool allBooksAlreadyIssued = false;
+                static bool allBooksConfirmationWin = false;
                 static bool everything = false;
                 static std::string requiredBook = "";
+                static std::string allWinBook = "";
                 ImGui::Begin("Library");
                 static char bookName[1000] = "";
                 ImGui::SameLine();
@@ -323,7 +333,7 @@ int main(int, char**)
                 }
                 if (everything)
                 {
-                    
+
                     ImGui::SetNextWindowFocus();
                     ImGui::Begin("Every Book", &everything);
                     ImGui::SetWindowSize(ImVec2(-FLT_MIN - 60, 30 * ImGui::GetTextLineHeightWithSpacing()));
@@ -338,12 +348,46 @@ int main(int, char**)
 
                             if (which)
                                 ImGui::SetItemDefaultFocus();
-                            
+
                         }
                         ImGui::EndListBox();
-                        
+
                     }
-                        
+                    ImGui::Button("Issue Book", buttonSize);
+                    if (ImGui::IsItemClicked(0))
+                    {
+                        allWinBook = sortedBooks.at(currentBook);
+                        IssueBook last = IssueBook();
+                        allBooksAlreadyIssued = last.finalizeProcess(&requiredUser, allWinBook);
+                        allBooksConfirmationWin = true;
+                        std::cout << "Issue book pressed";
+                    }
+                    if (allBooksConfirmationWin && !allBooksAlreadyIssued)
+                    {
+                        ImGui::SetNextWindowFocus();
+                        ImGui::Begin("Confirmation Window");
+                        ImGui::Text("Book Issued Successfully !");
+                        ImGui::Button("Close", buttonSize);
+                        if (ImGui::IsItemClicked(0))
+                        {
+                            allBooksConfirmationWin = false;
+                        }
+                        ImGui::End();
+                    }
+                    else if (allBooksConfirmationWin && allBooksAlreadyIssued)
+                    {
+                        ImGui::SetNextWindowFocus();
+                        ImGui::Begin("Error");
+                        ImGui::Text("You have already issued a book");
+                        ImGui::Text("Please return it to issue another book");
+                        ImGui::Button("Close", buttonSize);
+                        if (ImGui::IsItemClicked(0))
+                        {
+                            allBooksConfirmationWin = false;
+                        }
+                        ImGui::End();
+                    }
+
                     ImGui::End();
                 }
                     
@@ -412,13 +456,25 @@ int main(int, char**)
                         {
                             requiredBook = searchResult.at(item_current_idx);
                             IssueBook final = IssueBook();
-                            final.finalizeProcess(&requiredUser, requiredBook);
+                            alreadyIssued = final.finalizeProcess(&requiredUser, requiredBook);
                             confirmationWin = true;
                         }
-                        if (confirmationWin)
+                        if (confirmationWin && !alreadyIssued)
                         {
                             ImGui::Begin("Confirmation");
                             ImGui::Text("Book Issued Successfully");
+                            ImGui::Button("Close", buttonSize);
+                            if (ImGui::IsItemClicked(0))
+                            {
+                                confirmationWin = false;
+                            }
+                            ImGui::End();
+                        }
+                        else if (confirmationWin && alreadyIssued)
+                        {
+                            ImGui::Begin("Error");
+                            ImGui::Text("You have already issued a book");
+                            ImGui::Text("Please return it to issue another book");
                             ImGui::Button("Close", buttonSize);
                             if (ImGui::IsItemClicked(0))
                             {
